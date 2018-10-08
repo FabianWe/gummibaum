@@ -47,3 +47,28 @@ func NewConstHandler(mapper ConstMapper) *ConstHandler {
 func (h *ConstHandler) HandleLine(line string) string {
 	return h.replacer.Replace(line)
 }
+
+type RowHandler struct {
+	replaceVarMap map[string]string
+	currentCol    *Column
+}
+
+func (h *RowHandler) SetRow(c *Column) {
+	h.currentCol = c
+}
+
+func (h *RowHandler) HandleLine(line string) string {
+	// now create a replace and get each value from colMap
+	replaceMap := make([]string, 0, len(h.replaceVarMap)*2)
+	for replName, rowName := range h.replaceVarMap {
+		// lookup in colMap
+		val := h.currentCol.GetKey(rowName)
+		replaceMap = append(replaceMap, replName, val)
+	}
+	replacer := strings.NewReplacer(replaceMap...)
+	return replacer.Replace(line)
+}
+
+// func ExpandFromJSON(r io.Reader) error {
+// 	return nil
+// }

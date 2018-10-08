@@ -33,24 +33,24 @@ type CSVReader struct {
 //
 // This function exhaustively reads all data from the reader in memory, thus it
 // can be closed after the function returns
-func NewCSVReader(r io.Reader, sep rune, head bool) (CSVReader, error) {
+func NewCSVReader(r io.Reader, sep rune, head bool) (*CSVReader, error) {
 	// try to parse csv
 	csvReader := csv.NewReader(r)
 	csvReader.Comma = sep
 	allEntries, entriesErr := csvReader.ReadAll()
 	if entriesErr != nil {
-		return CSVReader{}, entriesErr
+		return nil, entriesErr
 	}
 	var headContent []string
 	if head {
 		// head must be the first entry
 		if len(allEntries) == 0 {
-			return CSVReader{}, errors.New("Can't read head from csv, does not contain any row")
+			return nil, errors.New("Can't read head from csv, does not contain any row")
 		}
 		headContent = allEntries[0]
 		allEntries = allEntries[1:]
 	}
-	return CSVReader{
+	return &CSVReader{
 			HeadContent:    headContent,
 			ColumnsContent: allEntries,
 		},
@@ -58,21 +58,21 @@ func NewCSVReader(r io.Reader, sep rune, head bool) (CSVReader, error) {
 }
 
 // NewCSVFileReader returns a new csv reader given a file path.
-func NewCSVFileReader(file string, sep rune, head bool) (CSVReader, error) {
+func NewCSVFileReader(file string, sep rune, head bool) (*CSVReader, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return CSVReader{}, err
+		return nil, err
 	}
 	defer f.Close()
 	return NewCSVReader(f, sep, head)
 }
 
 // Head returns the head.
-func (r CSVReader) Head() ([]string, error) {
+func (r *CSVReader) Head() ([]string, error) {
 	return r.HeadContent, nil
 }
 
 // Entries returns all columns.
-func (r CSVReader) Entries() ([][]string, error) {
+func (r *CSVReader) Entries() ([][]string, error) {
 	return r.ColumnsContent, nil
 }

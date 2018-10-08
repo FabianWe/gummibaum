@@ -34,47 +34,52 @@ func (i *arrayFlags) Set(value string) error {
 	return nil
 }
 
-func main() {
+func expand(args []string) {
 	var constFlag arrayFlags
 	expansion := flag.NewFlagSet("expand", flag.ExitOnError)
 	fileFlag := expansion.String("file", "", "Input template file")
 	expansion.Var(&constFlag, "const", "variable / value pair: var=value")
 	noEscape := expansion.Bool("no-escape", false, "Set to true to globally suppress LaTeX escaping of input")
+	expansion.Parse(args)
+	constMap, constMapErr := gummibaum.ParseConstPairs(constFlag)
+	if constMapErr != nil {
+		panic(constMapErr)
+	}
+	replacer := gummibaum.LatexReplacer(gummibaum.LatexReplaceFromList(gummibaum.DefaultReplacers))
+	if !*noEscape {
+		for key, val := range constMap {
+			constMap[key] = replacer(val)
+		}
+	}
+	constHandler := gummibaum.NewConstHandler(constMap)
+	if *fileFlag == "" {
+		panic("no file")
+	}
+	f, openErr := os.Open(*fileFlag)
+	if openErr != nil {
+		panic(openErr)
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = gummibaum.ApplyExpandHandlers(line, constHandler)
+		fmt.Println(line)
+	}
+	if scannErr := scanner.Err(); scannErr != nil {
+		panic(scannErr)
+	}
+}
+
+func main() {
 	if len(os.Args) == 1 {
 		fmt.Println("NO")
 		os.Exit(1)
 	}
+
 	switch os.Args[1] {
 	case "expand":
-		expansion.Parse(os.Args[2:])
-		constMap, constMapErr := gummibaum.ParseConstPairs(constFlag)
-		if constMapErr != nil {
-			panic(constMapErr)
-		}
-		replacer := gummibaum.LatexReplacer(gummibaum.LatexReplaceFromList(gummibaum.DefaultReplacers))
-		if !*noEscape {
-			for key, val := range constMap {
-				constMap[key] = replacer(val)
-			}
-		}
-		constHandler := gummibaum.NewConstHandler(constMap)
-		if *fileFlag == "" {
-			panic("no file")
-		}
-		f, openErr := os.Open(*fileFlag)
-		if openErr != nil {
-			panic(openErr)
-		}
-		defer f.Close()
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			line := scanner.Text()
-			line = gummibaum.ApplyExpandHandlers(line, constHandler)
-			fmt.Println(line)
-		}
-		if scannErr := scanner.Err(); scannErr != nil {
-			panic(scannErr)
-		}
+		expand(os.Args[2:])
 	default:
 		fmt.Println("NO 2")
 		os.Exit(1)

@@ -15,7 +15,10 @@
 package gummibaum
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 )
 
@@ -46,4 +49,23 @@ func ParseConstPairs(pairs []string) (ConstMapper, error) {
 		res[variable] = val
 	}
 	return res, nil
+}
+
+func ConstJSON(r io.Reader) (ConstMapper, error) {
+	dec := json.NewDecoder(r)
+	m := make(ConstMapper)
+	err := dec.Decode(&m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func ConstJSONFromeFile(file string) (ConstMapper, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ConstJSON(f)
 }

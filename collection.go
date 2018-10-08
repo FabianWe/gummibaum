@@ -40,13 +40,13 @@ type Column struct {
 }
 
 // NewColumn returns a new column and initializes the map m.
-func NewColumn(head, entries []string) Column {
+func NewColumn(head, entries []string) *Column {
 	n := IntMin(len(entries), len(head))
 	m := make(map[string]string, n)
 	for i := 0; i < n; i++ {
 		m[head[i]] = entries[i]
 	}
-	return Column{
+	return &Column{
 		Head:    head,
 		Entries: entries,
 		Map:     m,
@@ -56,7 +56,7 @@ func NewColumn(head, entries []string) Column {
 // GetPos returns the item on position i in Entries. If i is not a valid
 // position in entries NoColEntry is returned.
 // At is similar to GetPos but returns an error if i is invalid.
-func (c Column) GetPos(i int) string {
+func (c *Column) GetPos(i int) string {
 	if i < 0 || i >= len(c.Entries) {
 		return NoColEntry
 	}
@@ -66,7 +66,7 @@ func (c Column) GetPos(i int) string {
 // GetKey returns the item with the given key where key is row name.
 // If the key is not found NoColEntry is returned.
 // Value is similar to GetKey but returns an error if key is not found.
-func (c Column) GetKey(key string) string {
+func (c *Column) GetKey(key string) string {
 	if val, has := c.Map[key]; has {
 		return val
 	}
@@ -77,7 +77,7 @@ func (c Column) GetKey(key string) string {
 // mapping at key if key is a string. If it is neither NoColEntry is returned.
 // If the position / key is invalid NoColEntry is returned.
 // Element is similar to Get but returns an error if key is invalid.
-func (c Column) Get(key interface{}) string {
+func (c *Column) Get(key interface{}) string {
 	switch v := key.(type) {
 	case int:
 		return c.GetPos(v)
@@ -91,7 +91,7 @@ func (c Column) Get(key interface{}) string {
 // At returns the i-th entry. If i is not a valid position in entries an
 // error is returned.
 // GetPos is similar to At but does not return an error.
-func (c Column) At(i int) (string, error) {
+func (c *Column) At(i int) (string, error) {
 	if i < 0 || i >= len(c.Entries) {
 		return "", fmt.Errorf("Invalid index: %d in %v", i, c.Entries)
 	}
@@ -101,7 +101,7 @@ func (c Column) At(i int) (string, error) {
 // Value returns the item with the given key where key is row name.
 // If the key is not found an error is returned.
 // GetKey is similar to Value but does not return an error if key is invalid.
-func (c Column) Value(key string) (string, error) {
+func (c *Column) Value(key string) (string, error) {
 	if val, has := c.Map[key]; has {
 		return val, nil
 	}
@@ -112,7 +112,7 @@ func (c Column) Value(key string) (string, error) {
 // mapping at key if key is a string. If it is neither an error is returned.
 // If the position / key is invalid an error is returned.
 // Get is similar to Element but does not return an error if key is invalid.
-func (c Column) Element(key interface{}) (string, error) {
+func (c *Column) Element(key interface{}) (string, error) {
 	switch v := key.(type) {
 	case int:
 		return c.At(v)
@@ -140,7 +140,7 @@ type CollectionSource interface {
 // Collection groups together several columns with the same head (row names).
 type Collection struct {
 	Head    []string
-	Columns []Column
+	Columns []*Column
 }
 
 // NewCollection returns a new collection initialized with all entries from the
@@ -154,7 +154,7 @@ func NewCollection(source CollectionSource) (Collection, error) {
 	if entriesErr != nil {
 		return Collection{}, entriesErr
 	}
-	cols := make([]Column, len(entries))
+	cols := make([]*Column, len(entries))
 	for i, strCol := range entries {
 		col := NewColumn(head, strCol)
 		cols[i] = col
@@ -170,16 +170,16 @@ type MemoryCollection struct {
 }
 
 // NewMemoryCollection returns a new MemoryCollection given the data.
-func NewMemoryCollection(head []string, columns [][]string) MemoryCollection {
-	return MemoryCollection{head, columns}
+func NewMemoryCollection(head []string, columns [][]string) *MemoryCollection {
+	return &MemoryCollection{head, columns}
 }
 
 // Head returns the head.
-func (c MemoryCollection) Head() ([]string, error) {
+func (c *MemoryCollection) Head() ([]string, error) {
 	return c.HeadContent, nil
 }
 
 // Entries returns all columns.
-func (c MemoryCollection) Entries() ([][]string, error) {
+func (c *MemoryCollection) Entries() ([][]string, error) {
 	return c.ColumnsContent, nil
 }
