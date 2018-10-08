@@ -15,52 +15,68 @@
 package main
 
 import (
+	"bufio"
+	"flag"
 	"fmt"
-	"log"
 	"os"
-	"text/template"
 
 	"github.com/FabianWe/gummibaum"
 )
 
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return "my string representation"
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
 func main() {
-	const letter = `
-Dear {{.Name}},
-{{if .Attended}}
-It was a pleasure to see you at the wedding.
-{{- else}}
-It is a shame you couldn't make it to the wedding.
-{{- end}}
-{{with .Gift -}}
-Thank you for the lovely {{.}}.
-{{end}}
-Best wishes,
-Josie
-`
-	fmt.Println(gummibaum.DefaultReplacers)
-	// Prepare some data to insert into the template.
-	type Recipient struct {
-		Name, Gift string
-		Attended   bool
-		M          map[string]string
+	var constFlag arrayFlags
+	expansion := flag.NewFlagSet("expand", flag.ExitOnError)
+	fileFlag := expansion.String("file", "", "Input template file")
+	expansion.Var(&constFlag, "const", "variable / value pair: var=value")
+	noEscape := expansion.Bool("no-escape", false, "Set to true to globally suppress LaTeX escaping of input")
+	if len(os.Args) == 1 {
+		fmt.Println("NO")
+		os.Exit(1)
 	}
-	m := map[string]string{
-		"foo": "bar",
-	}
-	var recipients = []Recipient{
-		{"Aunt Mildred", "bone china tea set", true, m},
-		{"Uncle John", "moleskin pants", false, m},
-		{"Cousin Rodney", "", false, m},
-	}
-
-	// Create a new template and parse the letter into it.
-	t := template.Must(template.New("letter").Parse(letter))
-
-	// Execute the template for each recipient.
-	for _, r := range recipients {
-		err := t.Execute(os.Stdout, r)
-		if err != nil {
-			log.Println("executing template:", err)
+	switch os.Args[1] {
+	case "expand":
+		expansion.Parse(os.Args[2:])
+		constMap, constMapErr := gummibaum.ParseConstPairs(constFlag)
+		if constMapErr != nil {
+			panic(constMapErr)
 		}
+		replacer := gummibaum.LatexReplacer(gummibaum.LatexReplaceFromList(gummibaum.DefaultReplacers))
+		if !*noEscape {
+			for key, val := range constMap {
+				constMap[key] = replacer(val)
+			}
+		}
+		constHandler := gummibaum.NewConstHandler(constMap)
+		if *fileFlag == "" {
+			panic("no file")
+		}
+		f, openErr := os.Open(*fileFlag)
+		if openErr != nil {
+			panic(openErr)
+		}
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line := scanner.Text()
+			line = gummibaum.ApplyExpandHandlers(line, constHandler)
+			fmt.Println(line)
+		}
+		if scannErr := scanner.Err(); scannErr != nil {
+			panic(scannErr)
+		}
+	default:
+		fmt.Println("NO 2")
+		os.Exit(1)
 	}
 }

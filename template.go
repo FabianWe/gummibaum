@@ -17,6 +17,7 @@ package gummibaum
 import (
 	"fmt"
 	"strings"
+	"text/template"
 	"unicode/utf8"
 )
 
@@ -53,7 +54,8 @@ func Verb(del, s string) (string, error) {
 }
 
 var (
-	// DefaultReplacers describes the default replacer pairs.
+	// DefaultReplacers describes the default replacer pairs. Note that certain
+	// replacements like \textbackslash must have a leading space.
 	DefaultReplacers = []string{
 		"&", `\&`,
 		"%", `\%`,
@@ -62,9 +64,9 @@ var (
 		"_", `\_`,
 		"{", `\{`,
 		"}", `\}`,
-		"~", `\textasciitilde`,
-		"^", `\textasciicircum`,
-		`\`, `\textbackslash`,
+		"~", `\textasciitilde `,
+		"^", `\textasciicircum `,
+		`\`, `\textbackslash `,
 	}
 )
 
@@ -88,4 +90,11 @@ func LatexReplacer(replace LatexReplaceFunc) func(args ...interface{}) string {
 		s := fmt.Sprint(args...)
 		return replace(s)
 	}
+}
+
+func LatexTemplate(t *template.Template, replace LatexReplaceFunc) *template.Template {
+	funcMap := template.FuncMap{
+		"latex": LatexReplacer(replace),
+	}
+	return t.Funcs(funcMap)
 }
