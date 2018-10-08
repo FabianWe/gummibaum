@@ -16,13 +16,51 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"text/template"
 
 	"github.com/FabianWe/gummibaum"
 )
 
 func main() {
+	const letter = `
+Dear {{.Name}},
+{{if .Attended}}
+It was a pleasure to see you at the wedding.
+{{- else}}
+It is a shame you couldn't make it to the wedding.
+{{- end}}
+{{with .Gift -}}
+Thank you for the lovely {{.}}.
+{{end}}
+Best wishes,
+Josie
+`
 	fmt.Println(gummibaum.DefaultReplacers)
-	fmt.Println(gummibaum.ReplacerWithDefaults([]string{"foo", "bar", "blubb", "bla"}))
-	fmt.Println("a", "b", "c")
-	fmt.Println()
+	// Prepare some data to insert into the template.
+	type Recipient struct {
+		Name, Gift string
+		Attended   bool
+		M          map[string]string
+	}
+	m := map[string]string{
+		"foo": "bar",
+	}
+	var recipients = []Recipient{
+		{"Aunt Mildred", "bone china tea set", true, m},
+		{"Uncle John", "moleskin pants", false, m},
+		{"Cousin Rodney", "", false, m},
+	}
+
+	// Create a new template and parse the letter into it.
+	t := template.Must(template.New("letter").Parse(letter))
+
+	// Execute the template for each recipient.
+	for _, r := range recipients {
+		err := t.Execute(os.Stdout, r)
+		if err != nil {
+			log.Println("executing template:", err)
+		}
+	}
 }
