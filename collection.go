@@ -127,14 +127,14 @@ func (c Column) Element(key interface{}) (string, error) {
 // based data modell.
 //
 // Head describes the row names and can be nil in which case no names are given.
-// GetEntries returns all columns.
+// Entries returns all columns.
 //
-// For example Head might return ["first-name", "last-name"] and GetEntries
+// For example Head might return ["first-name", "last-name"] and Entries
 // might return [["John", "Doe"], ["Jane"]]. The second column does not have a
 // field "last-name".
 type CollectionSource interface {
 	Head() ([]string, error)
-	GetEntries() ([][]string, error)
+	Entries() ([][]string, error)
 }
 
 // Collection groups together several columns with the same head (row names).
@@ -150,7 +150,7 @@ func NewCollection(source CollectionSource) (Collection, error) {
 	if headErr != nil {
 		return Collection{}, headErr
 	}
-	entries, entriesErr := source.GetEntries()
+	entries, entriesErr := source.Entries()
 	if entriesErr != nil {
 		return Collection{}, entriesErr
 	}
