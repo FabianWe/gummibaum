@@ -161,3 +161,25 @@ func NewCollection(source CollectionSource) (Collection, error) {
 	}
 	return Collection{head, cols}, nil
 }
+
+// MemoryCollection implements CollectionSource with a predefined set of
+// content.
+type MemoryCollection struct {
+	HeadContent    []string
+	ColumnsContent [][]string
+}
+
+// NewMemoryCollection returns a new MemoryCollection given the data.
+func NewMemoryCollection(head []string, columns [][]string) MemoryCollection {
+	return MemoryCollection{head, columns}
+}
+
+// Head returns the head.
+func (c MemoryCollection) Head() ([]string, error) {
+	return c.HeadContent, nil
+}
+
+// Entries returns all columns.
+func (c MemoryCollection) Entries() ([][]string, error) {
+	return c.ColumnsContent, nil
+}
