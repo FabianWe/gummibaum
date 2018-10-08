@@ -1,3 +1,6 @@
+# Compiled binaries
+/gummibaum
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
