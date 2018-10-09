@@ -128,7 +128,7 @@ func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Tem
 		}
 		return t, nil
 	}
-	return nil, errors.New("No template file names given.")
+	return nil, errors.New("no template file names given.")
 }
 
 func TemplateConstJSON(r io.Reader) (map[string]string, error) {

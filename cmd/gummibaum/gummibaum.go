@@ -21,7 +21,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/FabianWe/gummibaum"
 )
@@ -235,16 +237,58 @@ func expand(args []string) {
 }
 
 func template(args []string) {
+	constMap := make(map[string]string)
+	collectionMap := make(map[string]*gummibaum.Collection)
 	templateFlags := flag.NewFlagSet("template", flag.ExitOnError)
+	var constFileFlag arrayFlags
+	templateFlags.Var(&constFileFlag, "const-file", "Path to a file containing const values (json)")
+	var collectionFileFlag arrayFlags
+	templateFlags.Var(&collectionFileFlag, "csv", "Paht to a csv file containing a data collection")
+	var constFlag arrayFlags
+	templateFlags.Var(&constFlag, "const", "replace variable / value pair: var=value")
 	templateFlags.Parse(args)
 	replacer := gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
+	for _, constPath := range constFileFlag {
+		nextConstMap, nextConstErr := gummibaum.TemplateConstFromJSONFile(constPath)
+		if nextConstErr != nil {
+			panic(nextConstErr)
+		}
+		constMap = gummibaum.MergeStringMaps(constMap, nextConstMap)
+	}
+	for _, csvPath := range collectionFileFlag {
+		nextCSV, csvErr := gummibaum.NewCSVFileReader(csvPath, ',', true)
+		if csvErr != nil {
+			panic(csvErr)
+		}
+		nextCollection, collectionErr := gummibaum.NewCollection(nextCSV)
+		if collectionErr != nil {
+			panic(collectionErr)
+		}
+		base := path.Base(csvPath)
+		base = strings.TrimSuffix(base, ".csv")
+		collectionMap[base] = nextCollection
+	}
+	cmdArgs, cmdArgsErr := gummibaum.ParseVarValList(constFlag)
+	if cmdArgsErr != nil {
+		panic(cmdArgsErr)
+	}
+	constMap = gummibaum.MergeStringMaps(constMap, cmdArgs)
 	filenames := templateFlags.Args()
 	template, templateErr := gummibaum.ParseTemplates(replacer, filenames...)
 	if templateErr != nil {
 		panic(templateErr)
 	}
-	data := map[string]interface{}{
-		"REPLNAME": "John",
+	data := make(map[string]interface{}, len(constMap)+len(collectionMap))
+	for key, value := range constMap {
+		data[key] = value
+	}
+	for key, value := range collectionMap {
+		// test if already present
+		if _, has := data[key]; has {
+			log.Println("Key", key, "is a constant as well as a data file, using const value")
+		} else {
+			data[key] = value
+		}
 	}
 	err := template.Execute(os.Stdout, data)
 	if err != nil {

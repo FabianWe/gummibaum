@@ -145,21 +145,21 @@ type Collection struct {
 
 // NewCollection returns a new collection initialized with all entries from the
 // source.
-func NewCollection(source CollectionSource) (Collection, error) {
+func NewCollection(source CollectionSource) (*Collection, error) {
 	head, headErr := source.Head()
 	if headErr != nil {
-		return Collection{}, headErr
+		return nil, headErr
 	}
 	entries, entriesErr := source.Entries()
 	if entriesErr != nil {
-		return Collection{}, entriesErr
+		return nil, entriesErr
 	}
 	cols := make([]*Column, len(entries))
 	for i, strCol := range entries {
 		col := NewColumn(head, strCol)
 		cols[i] = col
 	}
-	return Collection{head, cols}, nil
+	return &Collection{head, cols}, nil
 }
 
 // MemoryCollection implements CollectionSource with a predefined set of
