@@ -1,0 +1,20 @@
+\documentclass[a4paper]{scrartcl}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\title{Template File}
+
+\begin{document}
+
+\maketitle
+
+Hello {{latex .REPLNAME}},
+
+This is just a file demonstrating you how to use the gummibaum template system.
+Here is some verbatim text: {{verb "|" "foo" "bar" 42}}.
+
+You can also use it to iterate over data from a csv file.
+
+\end{document}

@@ -15,7 +15,12 @@
 package gummibaum
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path"
 	"strings"
 	"text/template"
 	"unicode/utf8"
@@ -42,11 +47,18 @@ func LatexEscapeFromList(mapping []string) LatexEscapeFunc {
 // Verb("|", "foo & bar") yields to \verb|foo & bar|. An error is returned if
 // the delimiter is contained in the input string or if delimiter has a length
 // != 1.
-func Verb(del, s string) (string, error) {
-	count := utf8.RuneCountInString(s)
+func Verb(del string, args ...interface{}) (string, error) {
+	count := utf8.RuneCountInString(del)
 	if count != 1 {
 		return "", fmt.Errorf(`Invalid delimiter length for \verb environment: Expected 1 and got %d`, count)
 	}
+	// not the way the template packages uses, that does more interesting stuff
+	// but I think it should be enough this way
+	asStrings := make([]string, len(args))
+	for i, arg := range args {
+		asStrings[i] = fmt.Sprintf("%v", arg)
+	}
+	s := strings.Join(asStrings, " ")
 	if strings.Contains(s, del) {
 		return "", fmt.Errorf(`Error executing \verb environment: Input string contains delimiter %s`, del)
 	}
@@ -87,7 +99,11 @@ func LatexEscaper(replace LatexEscapeFunc) func(args ...interface{}) string {
 	return func(args ...interface{}) string {
 		// not the way the template packages uses, that does more interesting stuff
 		// but I think it should be enough this way
-		s := fmt.Sprint(args...)
+		asStrings := make([]string, len(args))
+		for i, arg := range args {
+			asStrings[i] = fmt.Sprintf("%v", arg)
+		}
+		s := strings.Join(asStrings, " ")
 		return replace(s)
 	}
 }
@@ -95,6 +111,41 @@ func LatexEscaper(replace LatexEscapeFunc) func(args ...interface{}) string {
 func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Template {
 	funcMap := template.FuncMap{
 		"latex": LatexEscaper(replace),
+		"verb":  Verb,
 	}
 	return t.Funcs(funcMap)
+}
+
+func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Template, error) {
+
+	if len(filenames) > 0 {
+		// TODO naming should be fine? I think that's what the comment in ParseFiles
+		// in the source code means...
+		name := path.Base(filenames[0])
+		t, err := LatexTemplate(template.New(name), replace).ParseFiles(filenames...)
+		if err != nil {
+			return nil, err
+		}
+		return t, nil
+	}
+	return nil, errors.New("No template file names given.")
+}
+
+func TemplateConstJSON(r io.Reader) (map[string]string, error) {
+	m := make(map[string]string)
+	dec := json.NewDecoder(r)
+	err := dec.Decode(&m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func TemplateConstFromJSONFile(file string) (map[string]string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return TemplateConstJSON(f)
 }

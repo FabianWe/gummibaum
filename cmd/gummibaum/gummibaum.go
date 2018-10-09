@@ -234,6 +234,24 @@ func expand(args []string) {
 	}
 }
 
+func template(args []string) {
+	templateFlags := flag.NewFlagSet("template", flag.ExitOnError)
+	templateFlags.Parse(args)
+	replacer := gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
+	filenames := templateFlags.Args()
+	template, templateErr := gummibaum.ParseTemplates(replacer, filenames...)
+	if templateErr != nil {
+		panic(templateErr)
+	}
+	data := map[string]interface{}{
+		"REPLNAME": "John",
+	}
+	err := template.Execute(os.Stdout, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println("NO")
@@ -243,6 +261,8 @@ func main() {
 	switch os.Args[1] {
 	case "expand":
 		expand(os.Args[2:])
+	case "template":
+		template(os.Args[2:])
 	default:
 		fmt.Println("NO 2")
 		os.Exit(1)
