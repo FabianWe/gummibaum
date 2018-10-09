@@ -65,6 +65,30 @@ func Verb(del string, args ...interface{}) (string, error) {
 	return fmt.Sprintf(`\verb%s%s%s`, del, s, del), nil
 }
 
+func Join(replace LatexEscapeFunc) func(sep string, args ...interface{}) string {
+	return func(sep string, args ...interface{}) string {
+		asStrings := make([]string, 0, len(args))
+		for _, arg := range args {
+			if asSlice, ok := arg.([]string); ok {
+				// iterate slice
+				for _, a := range asSlice {
+					if replace != nil {
+						a = replace(a)
+					}
+					asStrings = append(asStrings, a)
+				}
+			} else {
+				var a string = fmt.Sprintf("%v", arg)
+				if replace != nil {
+					a = replace(a)
+				}
+				asStrings = append(asStrings, a)
+			}
+		}
+		return strings.Join(asStrings, sep)
+	}
+}
+
 var (
 	// DefaultReplacers describes the default replacer pairs. Note that certain
 	// replacements like \textbackslash must have a leading space.
@@ -112,6 +136,7 @@ func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Temp
 	funcMap := template.FuncMap{
 		"latex": LatexEscaper(replace),
 		"verb":  Verb,
+		"join":  Join(replace),
 	}
 	return t.Funcs(funcMap)
 }

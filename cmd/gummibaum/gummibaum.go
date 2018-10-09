@@ -104,7 +104,7 @@ func expand(args []string) {
 		rowHandler = gummibaum.NewRowHandler(rowMap, replacer)
 	}
 	if *fileFlag == "" {
-		panic("no file")
+		panic("No file provided")
 	}
 	f, openErr := os.Open(*fileFlag)
 	if openErr != nil {
@@ -246,7 +246,14 @@ func template(args []string) {
 	templateFlags.Var(&collectionFileFlag, "csv", "Paht to a csv file containing a data collection")
 	var constFlag arrayFlags
 	templateFlags.Var(&constFlag, "const", "replace variable / value pair: var=value")
+	outFilePath := templateFlags.String("out", "", "If given write to a file instead of std out.")
 	templateFlags.Parse(args)
+	w, done, wErr := getWriter(*outFilePath)
+	fmt.Println(*outFilePath)
+	if wErr != nil {
+		panic(wErr)
+	}
+	defer done()
 	replacer := gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
 	for _, constPath := range constFileFlag {
 		nextConstMap, nextConstErr := gummibaum.TemplateConstFromJSONFile(constPath)
@@ -290,25 +297,42 @@ func template(args []string) {
 			data[key] = value
 		}
 	}
-	err := template.Execute(os.Stdout, data)
+	err := template.Execute(w, data)
 	if err != nil {
 		panic(err)
 	}
 }
 
+func usage() {
+	name := os.Args[0]
+	fmt.Fprintf(os.Stdout, "Usage: %s expand or %s template\n", name, name)
+	fmt.Fprintln(os.Stdout, "You may append --help for further details")
+}
+
 func main() {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Fprintln(os.Stderr, "Error occurred:")
+			fmt.Fprintln(os.Stderr, r)
+			os.Exit(1)
+		}
+	}()
+
 	if len(os.Args) == 1 {
-		fmt.Println("NO")
+		usage()
 		os.Exit(1)
 	}
-
 	switch os.Args[1] {
 	case "expand":
 		expand(os.Args[2:])
 	case "template":
 		template(os.Args[2:])
+	case "--help", "-h":
+		usage()
 	default:
-		fmt.Println("NO 2")
+		fmt.Println("Invalid mode", os.Args[1])
+		usage()
 		os.Exit(1)
 	}
 }
