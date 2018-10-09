@@ -65,6 +65,10 @@ func Verb(del string, args ...interface{}) (string, error) {
 	return fmt.Sprintf(`\verb%s%s%s`, del, s, del), nil
 }
 
+// Join concatenates the elements of a to create a single string. The separator
+// string sep is placed between elements in the resulting string. The function
+// parameterized by a LatexEscapeFunc (that can be nil) that is used to prepare
+// each arg.
 func Join(replace LatexEscapeFunc) func(sep string, args ...interface{}) string {
 	return func(sep string, args ...interface{}) string {
 		asStrings := make([]string, 0, len(args))
@@ -132,6 +136,8 @@ func LatexEscaper(replace LatexEscapeFunc) func(args ...interface{}) string {
 	}
 }
 
+// LatexTemplate adds the functions "latex", "verb", and "join" to the template.
+// This function must be called before the template is parsed.
 func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Template {
 	funcMap := template.FuncMap{
 		"latex": LatexEscaper(replace),
@@ -141,6 +147,10 @@ func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Temp
 	return t.Funcs(funcMap)
 }
 
+// ParseTemplates parses the templates specified by filenames. See Go
+// template documentation for ParseTemplates for details. The functions
+// "latex", "verb" and "join" are added. The replace function is used to escape
+// special characters,if it is nil no replacement takes place.
 func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Template, error) {
 
 	if len(filenames) > 0 {
@@ -156,6 +166,8 @@ func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Tem
 	return nil, errors.New("no template file names given.")
 }
 
+// TemplateConstJSON parses a constant json file, it must be a dictionary
+// mapping strings (replace identifiers) by constant values.
 func TemplateConstJSON(r io.Reader) (map[string]string, error) {
 	m := make(map[string]string)
 	dec := json.NewDecoder(r)
@@ -166,6 +178,8 @@ func TemplateConstJSON(r io.Reader) (map[string]string, error) {
 	return m, nil
 }
 
+// TemplateConstFromJSONFile is like TemplateConstJSON and reads the content
+// from a file.
 func TemplateConstFromJSONFile(file string) (map[string]string, error) {
 	f, err := os.Open(file)
 	if err != nil {

@@ -15,6 +15,8 @@ Hello {{latex .REPLNAME}},
 This is just a file demonstrating you how to use the gummibaum template system.
 Here is some verbatim text: {{verb "|" "foo" "bar" 42}}.
 
+Here is another constant {{latex .REPLFOO}}
+
 You can also use it to iterate over data from a csv file.
 
 % The minus suppresses new line at the end of the template instruction
@@ -35,7 +37,6 @@ Here's another example using the join function {{join "," "foo" "bar"}}
 Here's an example to get an entry by index, get first column and get entry on position 0:
 
 {{with $col := (index .data.Columns 0) -}}
-	{{- index $col.Entries 0}}
+	{{- latex (index $col.Entries 0)}}
 {{ end -}}
-
 \end{document}

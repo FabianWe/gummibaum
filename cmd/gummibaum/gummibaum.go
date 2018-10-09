@@ -247,14 +247,18 @@ func template(args []string) {
 	var constFlag arrayFlags
 	templateFlags.Var(&constFlag, "const", "replace variable / value pair: var=value")
 	outFilePath := templateFlags.String("out", "", "If given write to a file instead of std out.")
+	noEscape := templateFlags.Bool("no-escape", false, "Set to true to globally suppress LaTeX escaping of input")
 	templateFlags.Parse(args)
+	var replacer gummibaum.LatexEscapeFunc
+	if !*noEscape {
+		replacer = gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
+	}
 	w, done, wErr := getWriter(*outFilePath)
 	fmt.Println(*outFilePath)
 	if wErr != nil {
 		panic(wErr)
 	}
 	defer done()
-	replacer := gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
 	for _, constPath := range constFileFlag {
 		nextConstMap, nextConstErr := gummibaum.TemplateConstFromJSONFile(constPath)
 		if nextConstErr != nil {

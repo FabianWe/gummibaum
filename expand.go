@@ -98,16 +98,24 @@ func (h *ConstHandler) HandleLine(line string) string {
 	return h.replacer.Replace(line)
 }
 
+// RowHandler replaces placeholders with values from a given column. It is not
+// save for concurrent use with different columns, use WithColumn to create
+// new RewHandlers with a new column and then run replacement on those instances
+// concurrently. WithColumn must be called before using HandleLine.
 type RowHandler struct {
 	replaceVarMap map[string]string
 	replaceFunc   LatexEscapeFunc
 	currentCol    *Column
 }
 
+// NewRowHandler returns a new RowHandler. replaceVarMap must be a mapping
+// mapping replace names to row names, for example "REPL-TOKEN" --> "token".
+// WithColumn must be called before HandleLine can be used.
 func NewRowHandler(replaceVarMap map[string]string, replaceFunc LatexEscapeFunc) *RowHandler {
 	return &RowHandler{replaceVarMap, replaceFunc, nil}
 }
 
+// WithColumn returns a new row handler with the column set.
 func (h *RowHandler) WithColumn(c *Column) *RowHandler {
 	return &RowHandler{h.replaceVarMap, h.replaceFunc, c}
 }
@@ -139,6 +147,10 @@ const (
 	inFootState
 )
 
+// ExpandParseTex splits the tex file into the three parts:
+// Head, everything before the line "%begin gummibaum repeat", body
+// everything between "%begin gummibaum repeat" and "%end gummibaum repeat"
+// and foot everything after "%end gummibaum repeat".
 func ExpandParseTex(r io.Reader) ([]string, []string, []string, error) {
 	state := inHeadState
 	scanner := bufio.NewScanner(r)
@@ -176,6 +188,9 @@ func ExpandParseTex(r io.Reader) ([]string, []string, []string, error) {
 	return head, body, foot, nil
 }
 
+// ExpandConfigJSON parses a config file. The config files must be a ditionary
+// mapping "const" to a dictionary of string variable / value pairs and mapping
+// "rows" to a dictionary of string variable / value pairs.
 func ExpandConfigJSON(r io.Reader) (map[string]string, map[string]string, error) {
 	type fileContent struct {
 		Const map[string]string
@@ -194,6 +209,8 @@ func ExpandConfigJSON(r io.Reader) (map[string]string, map[string]string, error)
 	return inst.Const, inst.Rows, nil
 }
 
+// ExpandConfigFromJSONFile is like ExpandConfigJSON and reads the content from
+// a file.
 func ExpandConfigFromJSONFile(file string) (map[string]string, map[string]string, error) {
 	f, err := os.Open(file)
 	if err != nil {
