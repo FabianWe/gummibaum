@@ -15,7 +15,7 @@ For usage information please see the [Wiki](https://github.com/FabianWe/gummibau
 Requires a go compiler ≥ 1.9. Use `go get -u FabianWe/gummibaum/...`. Then you can `go build cmd/gummibaum/gummibaum.go`.
 ### Binaries
 Precompiled binaries are available in the [releases section](https://github.com/FabianWe/gummibaum/releases).
-Windows is not tested, for Linux: Place the executable `gummibaum` somewhere and execute it. The best thing is probably to put it in */usr/local/bin*.
+Windows is not tested, for Linux: Place the executable `gummibaum` (rename to`gummibaum`) somewhere and execute it. The best thing is probably to put it in */usr/local/bin*.
 ## For Developers
 You can find the documentation on [GoDoc](https://godoc.org/github.com/FabianWe/gummibaum).
 ## License
