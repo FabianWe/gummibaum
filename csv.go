@@ -37,6 +37,8 @@ func NewCSVReader(r io.Reader, sep rune, head bool) (*CSVReader, error) {
 	// try to parse csv
 	csvReader := csv.NewReader(r)
 	csvReader.Comma = sep
+	// allow columns of different size
+	csvReader.FieldsPerRecord = -1
 	allEntries, entriesErr := csvReader.ReadAll()
 	if entriesErr != nil {
 		return nil, entriesErr

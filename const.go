@@ -14,58 +14,21 @@
 
 package gummibaum
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
-	"strings"
-)
-
-// ConstMapper maps variable names to constant values.
-type ConstMapper map[string]interface{}
-
-// ParseConstPair parses a string of the form var=val. It returns var and val.
-// For syntax errors an error != nil is returned.
-func ParseConstPair(s string) (string, string, error) {
-	i := strings.Index(s, "=")
-	if i < 0 {
-		return "", "", fmt.Errorf("Invalid variable / value pair %s: Must be var=val", s)
-	}
-	return s[:i], s[i+1:], nil
-}
-
-// ParseConstPairs parses a list of var=val pairs (each entry in pairs one such
-// pair). The vars are mapped to the value. For syntax errors an error != nil is
-// returned.
-func ParseConstPairs(pairs []string) (ConstMapper, error) {
-	res := make(ConstMapper, len(pairs))
-	for _, pairStr := range pairs {
-		// parse
-		variable, val, err := ParseConstPair(pairStr)
-		if err != nil {
-			return nil, err
-		}
-		res[variable] = val
-	}
-	return res, nil
-}
-
-func ConstJSON(r io.Reader) (ConstMapper, error) {
-	dec := json.NewDecoder(r)
-	m := make(ConstMapper)
-	err := dec.Decode(&m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func ConstJSONFromeFile(file string) (ConstMapper, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return ConstJSON(f)
-}
+// func ConstJSON(r io.Reader) (ConstMapper, error) {
+// 	dec := json.NewDecoder(r)
+// 	m := make(ConstMapper)
+// 	err := dec.Decode(&m)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return m, nil
+// }
+//
+// func ConstJSONFromeFile(file string) (ConstMapper, error) {
+// 	f, err := os.Open(file)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer f.Close()
+// 	return ConstJSON(f)
+// }

@@ -22,7 +22,7 @@ import (
 const (
 	// NoColEntry is returned by several methods of Column to indicate that a
 	// key was not found.
-	NoColEntry = "<no value>"
+	NoColEntry = "NO VALUE"
 )
 
 // Column represents a column in a collection.
