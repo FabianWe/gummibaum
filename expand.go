@@ -16,9 +16,11 @@ package gummibaum
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -48,10 +50,14 @@ func ParseVarValList(pairs []string) (map[string]string, error) {
 	return res, nil
 }
 
+// ExpandHandler is used for the expand mode to process a single line.
+// A handler transforms a line and returns the new line.
 type ExpandHandler interface {
 	HandleLine(line string) string
 }
 
+// ApplyExpandHandlers applies the handlers one after the other to the original
+// line.
 func ApplyExpandHandlers(line string, handlers ...ExpandHandler) string {
 	s := line
 	for _, handler := range handlers {
@@ -60,15 +66,23 @@ func ApplyExpandHandlers(line string, handlers ...ExpandHandler) string {
 	return s
 }
 
+// WriteExpandHandlers works as ApplyExpandHandlers but writes the result
+// to a writer. It returns the number of bytes written and any error that
+// occurred.
 func WriteExpandHandlers(w io.Writer, line string, handlers ...ExpandHandler) (int, error) {
 	return fmt.Fprintln(w, ApplyExpandHandlers(line, handlers...))
 }
 
+// ConstHandler replaces place holders with constant values.
 type ConstHandler struct {
 	replacer *strings.Replacer
 }
 
-func NewConstHandler(mapper map[string]string, replaceFunc LatexReplaceFunc) *ConstHandler {
+// NewConstHandler returns a new ConstHandler give the mapping place holder
+// to constant value (for example "NAME" mapped to "John").
+// replaceFunc is a function to escape LaTeX special characters. If it is nil
+// no replacements will take place.
+func NewConstHandler(mapper map[string]string, replaceFunc LatexEscapeFunc) *ConstHandler {
 	replaceMap := make([]string, 0, 2*len(mapper))
 	for key, value := range mapper {
 		valueStr := fmt.Sprint(value)
@@ -86,11 +100,11 @@ func (h *ConstHandler) HandleLine(line string) string {
 
 type RowHandler struct {
 	replaceVarMap map[string]string
-	replaceFunc   LatexReplaceFunc
+	replaceFunc   LatexEscapeFunc
 	currentCol    *Column
 }
 
-func NewRowHandler(replaceVarMap map[string]string, replaceFunc LatexReplaceFunc) *RowHandler {
+func NewRowHandler(replaceVarMap map[string]string, replaceFunc LatexEscapeFunc) *RowHandler {
 	return &RowHandler{replaceVarMap, replaceFunc, nil}
 }
 
@@ -160,4 +174,31 @@ func ExpandParseTex(r io.Reader) ([]string, []string, []string, error) {
 		return nil, nil, nil, errors.New("Invalid template syntax, must contain %%begin gummibaum repeat and %%end gummibaum repeat")
 	}
 	return head, body, foot, nil
+}
+
+func ExpandConfigJSON(r io.Reader) (map[string]string, map[string]string, error) {
+	type fileContent struct {
+		Const map[string]string
+		Rows  map[string]string
+	}
+	dec := json.NewDecoder(r)
+	inst := fileContent{
+		make(map[string]string),
+		make(map[string]string),
+	}
+	dec.DisallowUnknownFields()
+	err := dec.Decode(&inst)
+	if err != nil {
+		return nil, nil, err
+	}
+	return inst.Const, inst.Rows, nil
+}
+
+func ExpandConfigFromJSONFile(file string) (map[string]string, map[string]string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer f.Close()
+	return ExpandConfigJSON(f)
 }

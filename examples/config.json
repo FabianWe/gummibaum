@@ -1,10 +1,10 @@
 {
   "const": {
   	"REPL-NAME": "John",
-  	"REPL-FOO": "\\bar",
-    "x":5
+  	"REPL-FOO": "bar"
   },
   "rows": {
-    "":
+    "REPL-TOKEN": "token",
+    "REPL-VALUE": "value"
   }
 }

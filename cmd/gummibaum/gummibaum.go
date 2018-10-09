@@ -70,7 +70,17 @@ func expand(args []string) {
 	outFilePath := expansion.String("out", "", "If given write to a file instead of std out. Must be a directory if single-file is false")
 	singleFile := expansion.Bool("single-file", true, "If a collection is inserted output to a single file")
 	dataSource := expansion.String("csv", "", "Path to the csv file containing the data")
+	config := expansion.String("config", "", "Path to a json file containing the config")
 	expansion.Parse(args)
+	// first parse config from json if given
+	var jsonConst, jsonRows map[string]string
+	if len(*config) > 0 {
+		var jsonErr error
+		jsonConst, jsonRows, jsonErr = gummibaum.ExpandConfigFromJSONFile(*config)
+		if jsonErr != nil {
+			panic(jsonErr)
+		}
+	}
 	constMap, constMapErr := gummibaum.ParseVarValList(constFlag)
 	if constMapErr != nil {
 		panic(constMapErr)
@@ -79,9 +89,12 @@ func expand(args []string) {
 	if rowMapErr != nil {
 		panic(rowMapErr)
 	}
-	var replacer gummibaum.LatexReplaceFunc
+	// now update both maps, values from the command line take precedence
+	constMap = gummibaum.MergeStringMaps(jsonConst, constMap)
+	rowMap = gummibaum.MergeStringMaps(jsonRows, rowMap)
+	var replacer gummibaum.LatexEscapeFunc
 	if !*noEscape {
-		replacer = gummibaum.LatexReplaceFromList(gummibaum.DefaultReplacers)
+		replacer = gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
 	}
 	constHandler := gummibaum.NewConstHandler(constMap, replacer)
 	var rowHandler *gummibaum.RowHandler

@@ -21,17 +21,17 @@ import (
 	"unicode/utf8"
 )
 
-// LatexReplaceFunc is any function that replaces LaTeX special character within
+// LatexEscapeFunc is any function that replaces LaTeX special character within
 // a text. Usually it should be clear how to do this, but LaTeX is a very rich
 // language and I want to keep it extendable.
-type LatexReplaceFunc func(text string) string
+type LatexEscapeFunc func(text string) string
 
-// LatexReplaceFromList returns a replacement function given a map of
+// LatexEscapeFromList returns a replacement function given a map of
 // substitution pairs. Example: ["&", "\\&"] would replace each occurrence of
 // & with \&.
 // A list of default replacers can be found in DefaultReplacers,
-// ReplacerWithDefaults can be used to extend that list.
-func LatexReplaceFromList(mapping []string) LatexReplaceFunc {
+// EscapeWithDefaults can be used to extend that list.
+func LatexEscapeFromList(mapping []string) LatexEscapeFunc {
 	replacer := strings.NewReplacer(mapping...)
 	return func(s string) string {
 		return replacer.Replace(s)
@@ -70,20 +70,20 @@ var (
 	}
 )
 
-// ReplacerWithDefaults returns a replacer function that uses the content from
+// EscapeWithDefaults returns an escaper function that uses the content from
 // DefaultReplacers and combines it with the replacers from additional.
 // Example: ["&", "\\&"] would replace each occurrence of & with \&.
 // This replacement is already done by the DefaultReplacers though.
-func ReplacerWithDefaults(additional []string) LatexReplaceFunc {
+func EscapeWithDefaults(additional []string) LatexEscapeFunc {
 	fullReplacers := make([]string, len(DefaultReplacers)+len(additional))
 	copy(fullReplacers, DefaultReplacers)
 	copy(fullReplacers[len(DefaultReplacers):], additional)
-	return LatexReplaceFromList(fullReplacers)
+	return LatexEscapeFromList(fullReplacers)
 }
 
-// LatexReplacer returns a function that replaces an arbitrary number of
-// arguments with the specified replace function.
-func LatexReplacer(replace LatexReplaceFunc) func(args ...interface{}) string {
+// LatexEscaper returns a function that escapes an arbitrary number of
+// arguments with the specified escaping function.
+func LatexEscaper(replace LatexEscapeFunc) func(args ...interface{}) string {
 	return func(args ...interface{}) string {
 		// not the way the template packages uses, that does more interesting stuff
 		// but I think it should be enough this way
@@ -92,9 +92,9 @@ func LatexReplacer(replace LatexReplaceFunc) func(args ...interface{}) string {
 	}
 }
 
-func LatexTemplate(t *template.Template, replace LatexReplaceFunc) *template.Template {
+func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Template {
 	funcMap := template.FuncMap{
-		"latex": LatexReplacer(replace),
+		"latex": LatexEscaper(replace),
 	}
 	return t.Funcs(funcMap)
 }

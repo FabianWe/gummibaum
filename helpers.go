@@ -21,3 +21,17 @@ func IntMin(a, b int) int {
 	}
 	return b
 }
+
+// MergeStringMaps combines two string maps. The result is a new map (both maps are
+// unchanged) containing all entries from m1 and m2. If a key is present in both maps
+// the value from m2 is used.
+func MergeStringMaps(m1, m2 map[string]string) map[string]string {
+	res := make(map[string]string, len(m1)+len(m2))
+	for key, value := range m1 {
+		res[key] = value
+	}
+	for key, value := range m2 {
+		res[key] = value
+	}
+	return res
+}
