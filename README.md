@@ -10,8 +10,14 @@ Using Golangs template system and some additional functionality you can write La
 Expansion mode is more easy to understand but not as flexible as the template mode.
 ## Usage
 For usage information please see the [Wiki](https://github.com/FabianWe/gummibaum/wiki) and use `./gummibaum --help` or `./gummibaum expand --help` or `./gummibaum template --help`.
+## Installation
+### From source
+Requires a go compiler ≥ 1.9. Use `go get -u FabianWe/gummibaum/...`. Then you can `go build cmd/gummibaum/gummibaum.go`.
+### Binaries
+Precompiled binaries are available in the [releases section](https://github.com/FabianWe/gummibaum/releases).
+Windows is not tested, for Linux: Place the executable `gummibaum` somewhere and execute it. The best thing is probably to put it in */usr/local/bin*.
 ## For Developers
-You can find the documentation on
+You can find the documentation on [GoDoc](https://godoc.org/github.com/FabianWe/gummibaum).
 ## License
 Copyright 2018 Fabian Wenzelmann
 
