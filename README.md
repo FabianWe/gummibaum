@@ -12,7 +12,7 @@ Expansion mode is more easy to understand but not as flexible as the template mo
 For usage information please see the [Wiki](https://github.com/FabianWe/gummibaum/wiki) and use `./gummibaum --help` or `./gummibaum expand --help` or `./gummibaum template --help`.
 ## Installation
 ### From source
-Requires a go compiler ≥ 1.9. Use `go get -u githumb.com/FabianWe/gummibaum/...`. Then you can `go build cmd/gummibaum/gummibaum.go`.
+Requires a go compiler ≥ 1.9. Use `go get -u github.com/FabianWe/gummibaum/...`. Then you can `go build cmd/gummibaum/gummibaum.go`.
 ### Binaries
 Precompiled binaries are available in the [releases section](https://github.com/FabianWe/gummibaum/releases).
 Windows is not tested, for Linux: Place the executable `gummibaum` (rename to`gummibaum`) somewhere and execute it. The best thing is probably to put it in */usr/local/bin*.
