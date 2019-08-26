@@ -124,7 +124,7 @@ func (c *Column) Element(key interface{}) (string, error) {
 }
 
 // CollectionSource is everything that returns entries in the form of a column
-// based data modell.
+// based data model.
 //
 // Head describes the row names and can be nil in which case no names are given.
 // Entries returns all columns.

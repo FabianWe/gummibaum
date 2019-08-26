@@ -313,6 +313,10 @@ func usage() {
 	fmt.Fprintln(os.Stdout, "You may append --help for further details")
 }
 
+func interactiveCLI() {
+	fmt.Println("Interactive CLI is still under development")
+}
+
 func main() {
 
 	defer func() {
@@ -334,6 +338,8 @@ func main() {
 		template(os.Args[2:])
 	case "--help", "-h":
 		usage()
+	case "interactive":
+		interactiveCLI()
 	default:
 		fmt.Println("Invalid mode", os.Args[1])
 		usage()

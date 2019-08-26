@@ -29,7 +29,7 @@ import (
 func ParseVarValPair(s string) (string, string, error) {
 	i := strings.Index(s, "=")
 	if i < 0 {
-		return "", "", fmt.Errorf("Invalid variable / value pair %s: Must be var=val", s)
+		return "", "", fmt.Errorf("invalid variable / value pair %s: Must be var=val", s)
 	}
 	return s[:i], s[i+1:], nil
 }
@@ -188,7 +188,7 @@ func ExpandParseTex(r io.Reader) ([]string, []string, []string, error) {
 	return head, body, foot, nil
 }
 
-// ExpandConfigJSON parses a config file. The config files must be a ditionary
+// ExpandConfigJSON parses a config file. The config files must be a dictionary
 // mapping "const" to a dictionary of string variable / value pairs and mapping
 // "rows" to a dictionary of string variable / value pairs.
 func ExpandConfigJSON(r io.Reader) (map[string]string, map[string]string, error) {

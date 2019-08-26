@@ -65,7 +65,7 @@ func Verb(del string, args ...interface{}) (string, error) {
 	return fmt.Sprintf(`\verb%s%s%s`, del, s, del), nil
 }
 
-// Join concatenates the elements of a to create a single string. The separator
+// Join concatenates the elements of args to create a single string. The separator
 // string sep is placed between elements in the resulting string. The function
 // parameterized by a LatexEscapeFunc (that can be nil) that is used to prepare
 // each arg.
@@ -150,7 +150,7 @@ func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Temp
 // ParseTemplates parses the templates specified by filenames. See Go
 // template documentation for ParseTemplates for details. The functions
 // "latex", "verb" and "join" are added. The replace function is used to escape
-// special characters,if it is nil no replacement takes place.
+// special characters, if it is nil no replacement takes place.
 func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Template, error) {
 
 	if len(filenames) > 0 {
