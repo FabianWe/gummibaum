@@ -254,7 +254,6 @@ func template(args []string) {
 		replacer = gummibaum.LatexEscapeFromList(gummibaum.DefaultReplacers)
 	}
 	w, done, wErr := getWriter(*outFilePath)
-	fmt.Println(*outFilePath)
 	if wErr != nil {
 		panic(wErr)
 	}
@@ -285,7 +284,7 @@ func template(args []string) {
 	}
 	constMap = gummibaum.MergeStringMaps(constMap, cmdArgs)
 	filenames := templateFlags.Args()
-	template, templateErr := gummibaum.ParseTemplates(replacer, filenames...)
+	template, templateErr := gummibaum.ParseTemplates(replacer, "", "", filenames...)
 	if templateErr != nil {
 		panic(templateErr)
 	}

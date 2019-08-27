@@ -151,19 +151,28 @@ func LatexTemplate(t *template.Template, replace LatexEscapeFunc) *template.Temp
 // template documentation for ParseTemplates for details. The functions
 // "latex", "verb" and "join" are added. The replace function is used to escape
 // special characters, if it is nil no replacement takes place.
-func ParseTemplates(replace LatexEscapeFunc, filenames ...string) (*template.Template, error) {
+// Delims defines which delimiters are used. The default {{ and }} are not nice for latex, so we replace them.
+// #( and #) seem to be a good idea. This is what happens when you use the empty string as delims.
+func ParseTemplates(replace LatexEscapeFunc, delimLeft, delimRight string, filenames ...string) (*template.Template, error) {
+	if delimLeft == "" {
+		delimLeft = "#("
+	}
+
+	if delimRight == "" {
+		delimRight = "#)"
+	}
 
 	if len(filenames) > 0 {
 		// TODO naming should be fine? I think that's what the comment in ParseFiles
 		// in the source code means...
 		name := path.Base(filenames[0])
-		t, err := LatexTemplate(template.New(name), replace).ParseFiles(filenames...)
+		t, err := LatexTemplate(template.New(name), replace).Delims(delimLeft, delimRight).ParseFiles(filenames...)
 		if err != nil {
 			return nil, err
 		}
 		return t, nil
 	}
-	return nil, errors.New("no template file names given.")
+	return nil, errors.New("no template file names given")
 }
 
 // TemplateConstJSON parses a constant json file, it must be a dictionary
