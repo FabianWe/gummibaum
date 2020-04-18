@@ -50,7 +50,7 @@ func LatexEscapeFromList(mapping []string) LatexEscapeFunc {
 func Verb(del string, args ...interface{}) (string, error) {
 	count := utf8.RuneCountInString(del)
 	if count != 1 {
-		return "", fmt.Errorf(`Invalid delimiter length for \verb environment: Expected 1 and got %d`, count)
+		return "", fmt.Errorf(`invalid delimiter length for \verb environment: Expected 1 and got %d`, count)
 	}
 	// not the way the template packages uses, that does more interesting stuff
 	// but I think it should be enough this way
@@ -60,7 +60,7 @@ func Verb(del string, args ...interface{}) (string, error) {
 	}
 	s := strings.Join(asStrings, " ")
 	if strings.Contains(s, del) {
-		return "", fmt.Errorf(`Error executing \verb environment: Input string contains delimiter %s`, del)
+		return "", fmt.Errorf(`error executing \verb environment: Input string contains delimiter %s`, del)
 	}
 	return fmt.Sprintf(`\verb%s%s%s`, del, s, del), nil
 }
@@ -82,7 +82,7 @@ func Join(replace LatexEscapeFunc) func(sep string, args ...interface{}) string 
 					asStrings = append(asStrings, a)
 				}
 			} else {
-				var a string = fmt.Sprintf("%v", arg)
+				var a = fmt.Sprintf("%v", arg)
 				if replace != nil {
 					a = replace(a)
 				}
@@ -110,7 +110,7 @@ var (
 	}
 )
 
-// EscapeWithDefaults returns an escaper function that uses the content from
+// EscapeWithDefaults returns an escape function that uses the content from
 // DefaultReplacers and combines it with the replacers from additional.
 // Example: ["&", "\\&"] would replace each occurrence of & with \&.
 // This replacement is already done by the DefaultReplacers though.
@@ -194,6 +194,14 @@ func TemplateConstFromJSONFile(file string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	return TemplateConstJSON(f)
+	var m map[string]string
+	defer func() {
+		closeErr := f.Close()
+		if err == nil && closeErr != nil {
+			m = nil
+			err = closeErr
+		}
+	}()
+	m, err = TemplateConstJSON(f)
+	return m, err
 }
