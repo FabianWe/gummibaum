@@ -29,7 +29,7 @@ import (
 func ParseVarValPair(s string) (string, string, error) {
 	i := strings.Index(s, "=")
 	if i < 0 {
-		return "", "", fmt.Errorf("invalid variable / value pair %s: Must be var=val", s)
+		return "", "", fmt.Errorf("invalid variable / value pair \"%s\": Must be var=val", s)
 	}
 	return s[:i], s[i+1:], nil
 }
@@ -85,7 +85,7 @@ type ConstHandler struct {
 func NewConstHandler(mapper map[string]string, replaceFunc LatexEscapeFunc) *ConstHandler {
 	replaceMap := make([]string, 0, 2*len(mapper))
 	for key, value := range mapper {
-		valueStr := fmt.Sprint(value)
+		valueStr := value
 		if replaceFunc != nil {
 			valueStr = replaceFunc(valueStr)
 		}
@@ -120,7 +120,12 @@ func (h *RowHandler) WithColumn(c *Column) *RowHandler {
 	return &RowHandler{h.replaceVarMap, h.replaceFunc, c}
 }
 
+// HandleLine applies the actual replacement by substituting values for the current column.
+// If the current column is nil this method panics, a column must be set before with WithColumn.
 func (h *RowHandler) HandleLine(line string) string {
+	if h.currentCol == nil {
+		panic("no column set, WithColumn must be called before using RowHandler")
+	}
 	// fast: if no variables are given that need replacing return line
 	if len(h.replaceVarMap) == 0 {
 		return line
@@ -183,7 +188,7 @@ func ExpandParseTex(r io.Reader) ([]string, []string, []string, error) {
 	}
 	// now we must be in state inFootState, everything else is an error
 	if state != inFootState {
-		return nil, nil, nil, errors.New("Invalid template syntax, must contain %%begin gummibaum repeat and %%end gummibaum repeat")
+		return nil, nil, nil, errors.New("invalid template syntax, must contain %%begin gummibaum repeat and %%end gummibaum repeat")
 	}
 	return head, body, foot, nil
 }
@@ -216,6 +221,14 @@ func ExpandConfigFromJSONFile(file string) (map[string]string, map[string]string
 	if err != nil {
 		return nil, nil, err
 	}
-	defer f.Close()
-	return ExpandConfigJSON(f)
+	var consts, rows map[string]string
+	defer func() {
+		closeErr := f.Close()
+		if err == nil && closeErr != nil {
+			consts, rows = nil, nil
+			err = closeErr
+		}
+	}()
+	consts, rows, err = ExpandConfigJSON(f)
+	return consts, rows, err
 }

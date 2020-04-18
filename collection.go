@@ -17,6 +17,7 @@ package gummibaum
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -24,6 +25,22 @@ const (
 	// key was not found.
 	NoColEntry = "NO VALUE"
 )
+
+// ColKeyError is an error returned by several methods of Column to indicate that a ky was not found.
+type ColKeyError struct {
+	Message string
+}
+
+// NewColKeyError returns a new ColKeyError.
+func NewColKeyError(msgTemplate string, a ...interface{}) ColKeyError {
+	return ColKeyError{
+		Message: fmt.Sprintf(msgTemplate, a...),
+	}
+}
+
+func (err ColKeyError) Error() string {
+	return err.Message
+}
 
 // Column represents a column in a collection.
 // It has the head of the entries (that comes from the collection and all data
@@ -89,28 +106,33 @@ func (c *Column) Get(key interface{}) string {
 }
 
 // At returns the i-th entry. If i is not a valid position in entries an
-// error is returned.
+// error of type ColKeyError is returned.
 // GetPos is similar to At but does not return an error.
 func (c *Column) At(i int) (string, error) {
 	if i < 0 || i >= len(c.Entries) {
-		return "", fmt.Errorf("Invalid index: %d in %v", i, c.Entries)
+		return "", NewColKeyError("invalid index: %d, index must be >= 0 and < %d", i, len(c.Entries))
 	}
 	return c.Entries[i], nil
 }
 
 // Value returns the item with the given key where key is row name.
-// If the key is not found an error is returned.
+// If the key is not found an error of type ColKeyError is returned.
 // GetKey is similar to Value but does not return an error if key is invalid.
 func (c *Column) Value(key string) (string, error) {
 	if val, has := c.Map[key]; has {
 		return val, nil
 	}
-	return "", fmt.Errorf("Invalid key: %s in %v", key, c.Map)
+	validKeys := make([]string, len(c.Map))
+	i := 0
+	for key, _ := range c.Map {
+		validKeys[i] = key
+	}
+	return "", NewColKeyError("invalid key: %s, allowed keys are %s", key, strings.Join(validKeys, ", "))
 }
 
 // Element returns either the element on position key if key is an int or the
-// mapping at key if key is a string. If it is neither an error is returned.
-// If the position / key is invalid an error is returned.
+// mapping at key if key is a string. If it is neither an of type ColKeyError error is returned.
+// If the position / key is invalid an error of type ColKeyError is returned.
 // Get is similar to Element but does not return an error if key is invalid.
 func (c *Column) Element(key interface{}) (string, error) {
 	switch v := key.(type) {
@@ -119,7 +141,7 @@ func (c *Column) Element(key interface{}) (string, error) {
 	case string:
 		return c.Value(v)
 	default:
-		return "", fmt.Errorf("Invalid key type for column: Expect int or string, got %v", reflect.TypeOf(key))
+		return "", NewColKeyError("invalid key type for column: Expect int or string, got %v", reflect.TypeOf(key))
 	}
 }
 
@@ -143,8 +165,10 @@ type Collection struct {
 	Columns []*Column
 }
 
-// NewCollection returns a new collection initialized with all entries from the
+// NewCollection returns a new Collection initialized with all entries from the
 // source.
+//
+// It returns any error from source.
 func NewCollection(source CollectionSource) (*Collection, error) {
 	head, headErr := source.Head()
 	if headErr != nil {

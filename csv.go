@@ -31,8 +31,7 @@ type CSVReader struct {
 // (usually comma). If head is true the first column is assumed to be the head column
 // and must be present.
 //
-// This function exhaustively reads all data from the reader in memory, thus it
-// can be closed after the function returns
+// This function exhaustively reads all data from the reader in memory.
 func NewCSVReader(r io.Reader, sep rune, head bool) (*CSVReader, error) {
 	// try to parse csv
 	csvReader := csv.NewReader(r)
@@ -47,7 +46,7 @@ func NewCSVReader(r io.Reader, sep rune, head bool) (*CSVReader, error) {
 	if head {
 		// head must be the first entry
 		if len(allEntries) == 0 {
-			return nil, errors.New("Can't read head from csv, does not contain any row")
+			return nil, errors.New("can't read head from csv, does not contain any row")
 		}
 		headContent = allEntries[0]
 		allEntries = allEntries[1:]
@@ -65,8 +64,16 @@ func NewCSVFileReader(file string, sep rune, head bool) (*CSVReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	return NewCSVReader(f, sep, head)
+	var reader *CSVReader
+	defer func() {
+		closeErr := f.Close()
+		if err == nil && closeErr != nil {
+			reader = nil
+			err = closeErr
+		}
+	}()
+	reader, err = NewCSVReader(f, sep, head)
+	return reader, err
 }
 
 // Head returns the head.
