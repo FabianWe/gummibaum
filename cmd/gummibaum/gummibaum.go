@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/FabianWe/gummibaum"
@@ -30,12 +31,17 @@ import (
 
 type arrayFlags []string
 
-func (i *arrayFlags) String() string {
-	return "my string representation"
+func (flag *arrayFlags) String() string {
+	asStrings := make([]string, len(*flag))
+	for i, entry := range *flag {
+		asStrings[i] = entry
+	}
+	s := strings.Join(asStrings, ", ")
+	return s
 }
 
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, value)
+func (flag *arrayFlags) Set(value string) error {
+	*flag = append(*flag, value)
 	return nil
 }
 
@@ -48,7 +54,10 @@ func getWriter(path string) (io.Writer, func(), error) {
 		return nil, func() {}, err
 	}
 	done := func() {
-		f.Close()
+		closeErr := f.Close()
+		if closeErr != nil {
+			log.Printf("error closing file \"%s\": %v\n", path, closeErr)
+		}
 	}
 	return f, done, nil
 }
@@ -243,7 +252,7 @@ func template(args []string) {
 	var constFileFlag arrayFlags
 	templateFlags.Var(&constFileFlag, "const-file", "Path to a file containing const values (json)")
 	var collectionFileFlag arrayFlags
-	templateFlags.Var(&collectionFileFlag, "csv", "Paht to a csv file containing a data collection")
+	templateFlags.Var(&collectionFileFlag, "csv", "Path to a csv file containing a data collection")
 	var constFlag arrayFlags
 	templateFlags.Var(&constFlag, "const", "replace variable / value pair: var=value")
 	outFilePath := templateFlags.String("out", "", "If given write to a file instead of std out.")
@@ -308,12 +317,37 @@ func template(args []string) {
 
 func usage() {
 	name := os.Args[0]
-	fmt.Fprintf(os.Stdout, "Usage: %s expand or %s template\n", name, name)
-	fmt.Fprintln(os.Stdout, "You may append --help for further details")
+	fmt.Printf("Usage: %s expand or %s template\n", name, name)
+	fmt.Println("You may append --help for further details")
+	fmt.Printf("For meta information use %s about\n", name)
 }
 
 func interactiveCLI() {
 	fmt.Println("Interactive CLI is still under development")
+}
+
+const copyrightStr = `Copyright 2018 - 2020 Fabian Wenzelmann <fabianwen@posteo.eu>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.`
+
+const projectURL = "https://github.com/FabianWe/gummibaum"
+
+const version = "1.2.0"
+
+func about() {
+	fmt.Printf("gummibaum version %s (Go version %s)\n\n", version, runtime.Version())
+	fmt.Println(copyrightStr)
+	fmt.Printf("\nFor details see the project hompepage at\n\t%s\n", projectURL)
 }
 
 func main() {
@@ -339,6 +373,8 @@ func main() {
 		usage()
 	case "interactive":
 		interactiveCLI()
+	case "about":
+		about()
 	default:
 		fmt.Println("Invalid mode", os.Args[1])
 		usage()
